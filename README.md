@@ -13,7 +13,7 @@ This repository contains the necessary files and instructions to deploy MediaWik
 ## Installation Steps
 
 1.Trigger the workflow called as deploy.yml.
-2.Prereq is to trigger workflow called as infra.yml to setup aks and update kubeconfig file into secrets as KUBECONFIG in github repo .
+2.Prereq is to trigger workflow called as infradeploy.yml to setup aks and update kubeconfig file into secrets as KUBECONFIG in github repo .
 
 ## Screens
 
