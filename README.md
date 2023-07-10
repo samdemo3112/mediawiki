@@ -2,7 +2,7 @@
 
 This repository contains the necessary files and instructions to deploy MediaWiki to an Azure Kubernetes Service (AKS) cluster using Helm charts.
 
-MediaWiki is a free and open-source wiki software that allows you to create and edit content collaboratively. This deployment utilizes AKS for scalable and reliable hosting of MediaWiki.
+ This deployment utilizes AKS for scalable and reliable hosting of MediaWiki.
 
 ## Prerequisites
 
@@ -27,4 +27,6 @@ Post it installs azure cli , setup terrafrom , login to SP which is having contr
 
 Note : This is just to demo , it can be further optmized to handle error and reporting ,
 Nutshell it  automatically performs the necessary setup and provisioning tasks.Also maria db needs to be installed as stateful set which is not done here due to time constraints.
-##aks
+
+## Aks Setup
+Trigger the infra workflow to see AKS spinned up in default environment .
