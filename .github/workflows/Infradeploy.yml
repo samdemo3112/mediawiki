@@ -1,0 +1,93 @@
+name: One click AKS setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: 'Env where to deploy aks'
+        type: choice
+        default: 'test'
+        required: true
+        options:
+          - dev
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+
+jobs:
+  terraform-plan:
+    name: 'Tf plan'
+    runs-on: ubuntu-latest
+    steps:
+      - name: User Input
+        id: user_input
+        run: |
+          environment=${{ github.event.inputs.env }}
+          case $environment in
+            dev)
+              container_name="backendwest-container"
+              ;;
+            prod)
+              container_name="backendwest-container"
+              ;;
+            *)
+              echo "Invalid environment."
+              exit 1
+              ;;
+          esac
+          echo "::set-output name=container::${container_name}"
+
+      - name: Install Azure CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ca-certificates curl apt-transport-https lsb-release gnupg
+          curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null
+          AZ_REPO=$(lsb_release -cs)
+          echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $AZ_REPO main" | sudo tee /etc/apt/sources.list.d/azure-cli.list
+          sudo apt-get update
+          sudo apt-get install -y azure-cli
+     
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: latest
+          terraform_wrapper: false
+
+      - name: Azure Login
+        run: |
+          az login --service-principal --username b0b3b3d7-0c63-4969-b8c3-5a6b164fa8b4 --password ${{ secrets.AZURE_CLIENT_SECRET }} --tenant 88857969-5697-445f-89b7-eda2574450b6
+          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Terraform Init
+        run: terraform init -input=false 
+
+      - name: Terraform Plan
+        id: tf-plan
+        run: |
+          export exitcode=0
+          terraform init 
+          terraform plan -var-file="dev/dev.tfvars" -detailed-exitcode -no-color -out tfplan || export exitcode=$?
+  
+          
+          if [ $exitcode -eq 1 ]; then
+            echo "Terraform Plan Failed!"
+            exit 1
+          else 
+            exit 0
+          fi
+      # Terraform Apply
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
