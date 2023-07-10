@@ -1,0 +1,43 @@
+name: Deploy MediaWiki package to AKS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Dependencies
+        run: |
+          chmod +x scripts/setup.sh
+          scripts/setup.sh
+
+      - name: Set up Azure CLI
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up kubectl
+        uses: azure/k8s-set-context@v1
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: Install NGINX Ingress Controller
+        run: |
+          if ! helm list -q -n default | grep -q '^ingress-controller$'; then
+          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+          helm repo update
+          helm upgrade --install ingress-controller ingress-nginx/ingress-nginx --namespace default --create-namespace
+          else
+          echo "Helm release 'ingress-controller' already exists. Skipping installation."
+          fi
+   
+     
+
+      - name: Deploy MediaWiki Helm chart
+        run: |
+          helm upgrade --install mediawiki ./helm/mediawiki-chart --namespace default --create-namespace
