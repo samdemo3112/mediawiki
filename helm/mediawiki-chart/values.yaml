@@ -1,0 +1,11 @@
+image:
+  repository: mediawiki
+  tag: 1.35
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+ingress:
+   ip: x.x.x.x.nip.io  //Ingress controller ip incase no domain for test
